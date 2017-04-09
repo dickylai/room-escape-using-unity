@@ -21,9 +21,6 @@ namespace RoomEscape {
 		XmlDocument lockDb;
 		FileStream lockDbFile;
 
-		// set the threshold
-		public int keyThreshold;
-
 		// the seed using for procedural generation
 		public string seed;
 		private System.Random prng;
@@ -67,7 +64,6 @@ namespace RoomEscape {
 				// prng = new System.Random (seed.GetHashCode ());
 				difficulty = menu.GetDifficulty ();
 				// set the room difficulty parameters
-
 				if (difficulty == 0) {
 					maxNumOfRoom = prng.Next (1, 3);
 					maxNumOfFurn = prng.Next (3, 5);
@@ -78,32 +74,58 @@ namespace RoomEscape {
 					maxNumOfRoom = prng.Next (4, 6);
 					maxNumOfFurn = prng.Next (4, 6);
 				} 
+				Debug.Log ("maxNumOfRoom = " + maxNumOfRoom + "\nmaxNumOfFurn = " + maxNumOfFurn);
 
 				// initialize the allocators
 				ra = new RoomAllocator (prng);
 				ia = new InteractiveObjectAllocator (prng);
 
-				// generation algorithm as follows:
-				generateRoom ();
-				generateFurniture (ra.rooms [ra.rooms.Count - 1], 0);
-				while (ia.keys.Count < keyThreshold) {
-					// printInfo ();
-					roomNo = prng.Next(0, ra.rooms.Count);
-
-					// 
-					if ((ra.rooms [ra.rooms.Count - 1].fa.furnitures.Count) % maxNumOfFurn == 0 && 
-						ra.rooms [ra.rooms.Count - 1].fa.furnitures.Count != 0) {
-						if (ia.keys.Count != keyThreshold - 1) {
-							generateRoom ();
-							generateFurniture (ra.rooms [ra.rooms.Count - 1], 0);
+				// generation algorithm as follows
+				int counter = 0;
+				int openRoomFactor = 2*maxNumOfRoom;
+				while (ra.rooms.Count <= maxNumOfRoom) {
+					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull ()) {
+						generateKeyForLockDecision ();
+						break;
+					}
+					int prngTry = prng.Next (0, openRoomFactor);
+					if (ra.rooms.Count == 0 || (prngTry == 0 && ra.rooms.Count < maxNumOfRoom)) {
+						Debug.Log (Time.realtimeSinceStartup + " Gen Room");
+						generateRoom ();
+						roomNo = ra.rooms.Count - 1;
+						generateFurnitureDecision (ra.rooms [roomNo]);
+					} else {
+						roomNo = prng.Next (0, ra.rooms.Count);
+						int countLoop = 0;
+						while (ra.roomsIsFull [roomNo]) {
+							roomNo = (roomNo + 1) % ra.rooms.Count;
+							countLoop++;
+							if (countLoop > ra.rooms.Count)
+								break;
+						}
+						if (countLoop > ra.rooms.Count) {
+							if (openRoomFactor > 1) openRoomFactor--;
+							continue;
 						}
 					}
-					if ((ia.locations.Count + ia.locks.Count + ia.doors.Count - ia.interactiveObjects.Count) != 0) {
+
+					if (ia.IsEmptyLocationExisted ()) {
 						if (generateKeyForLockDecision() == -1) {
-							generateFurnitureDecision (ra.rooms [ra.rooms.Count - 1]);
+							generateFurnitureDecision (ra.rooms [roomNo]);
 						}
 					} else {
-						generateFurnitureDecision (ra.rooms [ra.rooms.Count - 1]);
+						generateFurnitureDecision (ra.rooms [roomNo]);
+					}
+
+					if (ra.rooms [roomNo].fa.IsEnoughFurniture (maxNumOfFurn)) {
+						Debug.Log ("room" + roomNo + "is Set TRUE");
+						ra.roomsIsFull [roomNo] = true;
+					}
+
+					counter++;
+					if (counter > 200) {
+						Debug.Log ("Too many Loops");
+						break;
 					}
 				}
 				ia.ShiftKeys ();
@@ -215,11 +237,11 @@ namespace RoomEscape {
 
 		// function for generating a new furniture decision
 		void generateFurnitureDecision (Room room) {
-			if (ra.rooms [ra.rooms.Count - 1].fa.furnitures.Count != 0) {
-				generateFurniture (ra.rooms [ra.rooms.Count - 1], 1);
-				generateLock ("Drawer");
+			if (room.fa.IsNoFurniture ()) {
+				generateFurniture (room, 0);
 			} else {
-				generateFurniture (ra.rooms [ra.rooms.Count - 1], 0);
+				generateFurniture (room, 1);
+				generateLock ("Drawer");
 			}
 		}
 
@@ -238,7 +260,7 @@ namespace RoomEscape {
 			int chooseObj;
 			string thumbnail;
 			string type;
-			if ((ia.locations.Count + ia.lockLocations.Count + ia.doors.Count - ia.interactiveObjects.Count) != 0) {
+			if (ia.IsEmptyLocationExisted ()) {
 				if (ia.GetNextObjType (out chooseObj, out type)) {
 					GameObject obj = (GameObject)Instantiate (getIntObjPrefab (type, out nextType, out thumbnail));
 					if (ia.AllocatePickIntObj (chooseObj, obj, nextType, thumbnail)) {

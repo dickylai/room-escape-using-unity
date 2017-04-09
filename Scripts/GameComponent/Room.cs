@@ -53,7 +53,7 @@ namespace RoomEscape {
 			Light lightComp = lightGameObject.AddComponent<Light> ();
 			lightComp.color = Color.white;
 			lightComp.intensity = 0.3f;
-			lightComp.renderMode = LightRenderMode.ForceVertex;
+			lightComp.renderMode = LightRenderMode.ForcePixel;
 			lightComp.shadows = LightShadows.Soft;
 			lightGameObject.transform.position = new Vector3 (originX, 2.9f, originZ);
 			lightGameObject.transform.SetParent(obj.transform);

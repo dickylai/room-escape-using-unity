@@ -8,7 +8,6 @@ namespace RoomEscape {
 
 		public Texture2D crosshairImage;
 		public Image panel;
-		public Sprite spr;
 		private List<Image> thumbnails;
 		private List<PickIntObj> objs;
 		private RoomGenerator roomGenerator;

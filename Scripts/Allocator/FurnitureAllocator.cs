@@ -43,6 +43,17 @@ namespace RoomEscape {
 			return (floor [1].x >= temp [1].x && floor [1].y >= temp [1].y && floor [2].x <= temp [2].x && floor [2].y <= temp [2].y);
 		}
 
+		// function for checking if enough furniture inside the room
+		public bool IsEnoughFurniture (int max) {
+			return (furnitures.Count < max) ? false : true;
+		}
+
+		// function for checking if no furniture inside the room
+		public bool IsNoFurniture () {
+			Debug.Log (Time.realtimeSinceStartup + " furniture count: " + furnitures.Count);
+			return (furnitures.Count == 0) ? true : false;
+		}
+
 		// function for allocating furniture in the room
 		public bool AllocateFurniture (GameObject obj, int againstWall) {
 			float originX, originZ;

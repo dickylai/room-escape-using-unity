@@ -24,6 +24,11 @@ namespace RoomEscape {
 			this.keys = new List<InteractiveObject> ();
 		}
 
+		// function for checking if a location is empty 
+		public bool IsEmptyLocationExisted () {
+			return (locations.Count + lockLocations.Count + doors.Count - interactiveObjects.Count > 0) ? true : false;
+		}
+
 		// function for allocating a door
 		public void AllocateDoor (float originX, float originZ, float rotation, GameObject obj) {
 			Door door = new Door ("Door" + (doors.Count + 1), originX, originZ, rotation, obj);

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 namespace RoomEscape {
 	public class RoomAllocator : Allocator {
 		public List<Room> rooms;
+		public List<bool> roomsIsFull;
 
 		float x, z, originX, originZ, doorOriginX, doorOriginZ, doorPosition, doorRotation, localX, localZ;
 		int linkedRoomNo, getSide;
@@ -12,7 +13,17 @@ namespace RoomEscape {
 
 		public RoomAllocator (System.Random prng) : base (prng) {
 			rooms = new List<Room> ();
+			roomsIsFull = new List<bool> ();
 			linkedRoomNo = -1;
+		}
+
+		public bool IsAllRoomsFull () {
+			if (roomsIsFull.Count == 0)
+				return false;
+			foreach (bool check in roomsIsFull)
+				if (check == false)
+					return false;
+			return true;
 		}
 
 		public bool AllocateRoom (out float outDoorOriginX, out float outDoorOriginZ, out float outDoorRotation) {
@@ -84,6 +95,7 @@ namespace RoomEscape {
 			}
 			if (linkedRoomNo == -1 || (!IsCollidedByValues (x, z, originX, originZ) && rooms [linkedRoomNo].fa.IsInsideFloorByValues (1.5f, 1.5f, localX, localZ) && !rooms [linkedRoomNo].fa.IsCollidedByValues (1.5f, 1.5f, localX, localZ))) {
 				rooms.Add (new Room ("Room" + (rooms.Count + 1), x, z, originX, originZ, prng));
+				roomsIsFull.Add (false);
 				allocatedSpace.Add (getPointsByValues (x, z, originX, originZ));
 
 				// adding door hole
