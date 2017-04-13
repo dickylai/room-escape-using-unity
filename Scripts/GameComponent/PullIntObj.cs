@@ -16,10 +16,11 @@ namespace RoomEscape {
 				obj.gameObject.transform.GetComponent<Interaction> ().Pulling (0.4f);
 				base.Click ();
 				isOpened = true;
-			} else if (isSolved && isOpened) {
-				obj.gameObject.transform.GetComponent<Interaction> ().Pulling (-0.4f);
-				isOpened = false;
-			}
+			} 
+//			else if (isSolved && isOpened) {
+//				obj.gameObject.transform.GetComponent<Interaction> ().Pulling (-0.4f);
+//				isOpened = false;
+//			}
 		}
 	}
 	

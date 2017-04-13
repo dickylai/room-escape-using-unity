@@ -15,10 +15,11 @@ namespace RoomEscape {
 				obj.gameObject.transform.GetComponent<Interaction> ().Rotation (-90);
 				base.Click ();
 				isOpened = true;
-			} else if (isSolved && isOpened) {
-				obj.gameObject.transform.GetComponent<Interaction> ().Rotation (90);
-				isOpened = false;
-			}
+			} 
+//			else if (isSolved && isOpened) {
+//				obj.gameObject.transform.GetComponent<Interaction> ().Rotation (90);
+//				isOpened = false;
+//			}
 		}
 	}
 }

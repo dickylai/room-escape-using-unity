@@ -1,7 +1,4 @@
-/Database/*
-/FPS\ Assets/*
-/Images/*
-/Resources/*
-/Scenes/*
+/*
+!/Scripts/*
 *.meta
 

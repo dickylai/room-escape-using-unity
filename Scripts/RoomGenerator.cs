@@ -88,26 +88,8 @@ namespace RoomEscape {
 						generateKeyForLockDecision ();
 						break;
 					}
-					int prngTry = prng.Next (0, openRoomFactor);
-					if (ra.rooms.Count == 0 || (prngTry == 0 && ra.rooms.Count < maxNumOfRoom)) {
-						Debug.Log (Time.realtimeSinceStartup + " Gen Room");
-						generateRoom ();
-						roomNo = ra.rooms.Count - 1;
-						generateFurnitureDecision (ra.rooms [roomNo]);
-					} else {
-						roomNo = prng.Next (0, ra.rooms.Count);
-						int countLoop = 0;
-						while (ra.roomsIsFull [roomNo]) {
-							roomNo = (roomNo + 1) % ra.rooms.Count;
-							countLoop++;
-							if (countLoop > ra.rooms.Count)
-								break;
-						}
-						if (countLoop > ra.rooms.Count) {
-							if (openRoomFactor > 1) openRoomFactor--;
-							continue;
-						}
-					}
+					if ((roomNo = getRoomDecision (ref openRoomFactor, maxNumOfRoom)) == -1)
+						continue;
 
 					if (ia.IsEmptyLocationExisted ()) {
 						if (generateKeyForLockDecision() == -1) {
@@ -218,6 +200,31 @@ namespace RoomEscape {
 			} else {
 				Destroy (furniture);
 			}
+		}
+
+		int getRoomDecision(ref int openRoomFactor, int maxNumOfRoom) {
+			int roomNo;
+			int prngTry = prng.Next (0, openRoomFactor);
+			if (ra.rooms.Count == 0 || (prngTry == 0 && ra.rooms.Count < maxNumOfRoom)) {
+				Debug.Log (Time.realtimeSinceStartup + " Gen Room");
+				generateRoom ();
+				roomNo = ra.rooms.Count - 1;
+				generateFurnitureDecision (ra.rooms [roomNo]);
+			} else {
+				roomNo = prng.Next (0, ra.rooms.Count);
+				int countLoop = 0;
+				while (ra.roomsIsFull [roomNo]) {
+					roomNo = (roomNo + 1) % ra.rooms.Count;
+					countLoop++;
+					if (countLoop > ra.rooms.Count)
+						break;
+				}
+				if (countLoop > ra.rooms.Count) {
+					if (openRoomFactor > 1) openRoomFactor--;
+					return -1;
+				}
+			}
+			return roomNo;
 		}
 
 		int generateKeyForLockDecision () {
