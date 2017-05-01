@@ -2,22 +2,35 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 namespace RoomEscape {
 	public class ControlInterface : MonoBehaviour {
 
 		public Texture2D crosshairImage;
 		public Image panel;
+
+		public Text seedText;
+		public Text levelText;
+
 		private List<Image> thumbnails;
 		private List<PickIntObj> objs;
 		private RoomGenerator roomGenerator;
+		private Menu menu;
 
 		// Use this for initialization
 		void Start () {
 			roomGenerator = GetComponent<RoomGenerator> ();
+			menu = GetComponent<Menu> ();
 			thumbnails = new List<Image> ();
 			objs = new List<PickIntObj> ();
 			thumbnails.AddRange (panel.GetComponentsInChildren<Image> ());
+
+			seedText.text = " Seed: \"" + menu.GetSeed () + "\"";
+			levelText.text = " Level: ";
+			if (menu.GetDifficulty () == 0) levelText.text += "Easy";
+			else if (menu.GetDifficulty () == 1) levelText.text += "Normal";
+			else levelText.text += "Hard";
 		}
 
 		// Update is called once per frame
@@ -27,9 +40,11 @@ namespace RoomEscape {
 				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
 				if (Physics.Raycast (ray, out hit, 1.8f)) {
 					Debug.Log (hit.transform.tag);
-					if (hit.transform.CompareTag ("staticObj") || hit.transform.CompareTag ("nonStaticObjPull") || hit.transform.CompareTag ("nonStaticObjRotate") || hit.transform.CompareTag ("door")) {
+					if (hit.transform.CompareTag ("staticObj") || hit.transform.CompareTag ("nonStaticObjPull") || hit.transform.CompareTag ("nonStaticObjRotate") || hit.transform.CompareTag ("nonStaticObjSwitch") || hit.transform.CompareTag ("door")) {
+						Debug.Log (Time.timeSinceLevelLoad + hit.transform.tag + " hihi");
 						InteractiveObject interactiveObject = roomGenerator.ia.GetInteractiveObject (hit.transform.gameObject);
 						if (interactiveObject != null) {
+							Debug.Log (Time.timeSinceLevelLoad + " hihi2");
 							roomGenerator.ia.GetLink (interactiveObject, getSelectedObj ());
 							updateInventory ();
 						}
@@ -47,6 +62,12 @@ namespace RoomEscape {
 						break;
 					}
 				}
+			}
+
+			if (Input.GetKeyDown ("k")) {
+				Cursor.lockState = CursorLockMode.None;
+				Cursor.visible = true;
+				SceneManager.LoadScene ("Menu");
 			}
 		}
 

@@ -54,6 +54,42 @@ namespace RoomEscape {
 			return (furnitures.Count == 0) ? true : false;
 		}
 
+		// function for allocating furniture set in the room
+		public bool AllocateFurnitureSet (GameObject obj, int againstWall) {
+			float originX, originZ;
+			int trial = 0;
+			do {
+				if (againstWall == 1) {
+					int randSize = prng.Next(0,3);
+					// int randSize = 1;
+					if (randSize == 0) {
+						obj.transform.Rotate(new Vector3 (0,270,0));
+						originX = floor [1].x - obj.transform.lossyScale.z / 2;
+						originZ = prng.Next ((int)minZ * 10, (int)maxZ * 10) / 10;
+					} else if (randSize == 1) {
+						obj.transform.Rotate(new Vector3 (0,90,0));
+						originX = floor [2].x + obj.transform.lossyScale.z / 2;
+						originZ = prng.Next ((int)minZ * 10, (int)maxZ * 10) / 10;
+					} else {
+						originX = prng.Next ((int)minX * 10, (int)maxX * 10) / 10;
+						originZ = floor [2].y + obj.transform.lossyScale.z / 2;
+					}
+				} else {
+					originX = prng.Next ((int)minX * 10, (int)maxX * 10) / 10;
+					originZ = prng.Next ((int)minZ * 10, (int)maxZ * 10) / 10;
+				}
+				obj.transform.position = new Vector3 (originX, obj.transform.position.y, originZ);
+				trial++;
+			} while ((!IsInsideFloorByObject (obj) || IsCollidedByObject (obj)) && trial < 1);
+			if (!IsCollidedByObject (obj) && IsInsideFloorByObject (obj)) {
+				allocatedSpace.Add (getPointsByObject (obj));
+				furnitures.Add (new Furniture ("Furniture" + (furnitures.Count + 1), originX, originZ, obj));
+				return true;
+			} else {
+				return false;
+			}
+		}
+
 		// function for allocating furniture in the room
 		public bool AllocateFurniture (GameObject obj, int againstWall) {
 			float originX, originZ;
@@ -84,6 +120,15 @@ namespace RoomEscape {
 			} else {
 				return false;
 			}
+		}
+		public bool AllocateFurniture (GameObject obj) {
+			float originX, originZ;
+			originX = obj.transform.parent.position.x;
+			originZ = obj.transform.parent.position.z;
+			obj.transform.position = new Vector3 (originX, obj.transform.position.y, originZ);
+			obj.transform.rotation = obj.transform.parent.rotation;
+			// furnitures.Add (new Furniture ("Furniture" + (furnitures.Count + 1), originX, originZ, obj));
+			return true;
 		}
 	}
 }

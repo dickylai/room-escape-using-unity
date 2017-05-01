@@ -75,7 +75,9 @@ namespace RoomEscape {
 					intObj = new PullIntObj (locations [chooseLocation], obj);
 				} else if (obj.transform.CompareTag ("nonStaticObjRotate")) {
 					intObj = new RotateIntObj (locations [chooseLocation], obj);
-				}
+				} else if (obj.transform.CompareTag ("nonStaticObjSwitch")) {
+					intObj = new SwitchIntObj (locations [chooseLocation], obj);
+				} 
 				interactiveObjects.Add (intObj);
 			}
 		}

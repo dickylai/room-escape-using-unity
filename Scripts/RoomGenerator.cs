@@ -9,20 +9,24 @@ namespace RoomEscape {
 	// The RoomGenerator class generates all the rooms, furnitures and relations between different objects.
 	public class RoomGenerator : MonoBehaviour {
 		// variables for the databases
-		public string furnitureDbFilepath;
+		string furnitureDbFilePath;
 		XmlDocument furnitureDb;
 		FileStream furnitureDbFile;
 
-		public string intObjDbFilepath;
+		string furnitureSetDbFilePath;
+		XmlDocument furnitureSetDb;
+		FileStream furnitureSetDbFile;
+
+		string intObjDbFilePath;
 		XmlDocument intObjDb;
 		FileStream intObjDbFile;
 
-		public string lockDbFilepath;
+		string lockDbFilePath;
 		XmlDocument lockDb;
 		FileStream lockDbFile;
 
+
 		// the seed using for procedural generation
-		public string seed;
 		private System.Random prng;
 
 		// list for storing different prefabs
@@ -43,25 +47,33 @@ namespace RoomEscape {
 			menu = GetComponent<Menu> ();
 			doorPrefab = new List<Object> ();
 
+			furnitureDbFilePath = "./Assets/Database/furnitures.xml";
+			furnitureSetDbFilePath = "./Assets/Database/furnituresets.xml";
+			intObjDbFilePath = "./Assets/Database/intobjs.xml";
+			lockDbFilePath = "./Assets/Database/locks.xml";
+
 			furnitureDb = new XmlDocument();
-			furnitureDbFile = new FileStream(furnitureDbFilepath, FileMode.Open);
+			furnitureDbFile = new FileStream(furnitureDbFilePath, FileMode.Open);
 			furnitureDb.Load (furnitureDbFile);
 
+			furnitureSetDb = new XmlDocument();
+			furnitureSetDbFile = new FileStream(furnitureSetDbFilePath, FileMode.Open);
+			furnitureSetDb.Load (furnitureSetDbFile);
+
 			intObjDb = new XmlDocument();
-			intObjDbFile = new FileStream(intObjDbFilepath, FileMode.Open);
+			intObjDbFile = new FileStream(intObjDbFilePath, FileMode.Open);
 			intObjDb.Load (intObjDbFile);
 
 			lockDb = new XmlDocument();
-			lockDbFile = new FileStream(lockDbFilepath, FileMode.Open);
+			lockDbFile = new FileStream(lockDbFilePath, FileMode.Open);
 			lockDb.Load (lockDbFile);
 
 			int maxNumOfRoom = 0;
 			int maxNumOfFurn = 0;
-			int roomNo = 0;
+			int roomNo = -1;
 			if (!gen) {
 				// get the seed and difficulty
 				prng = new System.Random (menu.GetSeed ().GetHashCode ());
-				// prng = new System.Random (seed.GetHashCode ());
 				difficulty = menu.GetDifficulty ();
 				// set the room difficulty parameters
 				if (difficulty == 0) {
@@ -82,31 +94,29 @@ namespace RoomEscape {
 
 				// generation algorithm as follows
 				int counter = 0;
-				int openRoomFactor = 2*maxNumOfRoom;
+				int openRoomFactor = 2 * maxNumOfRoom;
 				while (ra.rooms.Count <= maxNumOfRoom) {
-					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull ()) {
+					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull ()) { // end the generation
 						generateKeyForLockDecision ();
 						break;
 					}
-					if ((roomNo = getRoomDecision (ref openRoomFactor, maxNumOfRoom)) == -1)
+					if (!getRoomDecision (ref roomNo, ref openRoomFactor, maxNumOfRoom)) // no room selected successfully
 						continue;
 
 					if (ia.IsEmptyLocationExisted ()) {
-						if (generateKeyForLockDecision() == -1) {
-							generateFurnitureDecision (ra.rooms [roomNo]);
+						if (generateKeyForLockDecision() == -1) { // no lock
+							generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture with lock(s)
 						}
 					} else {
-						generateFurnitureDecision (ra.rooms [roomNo]);
+						generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture without lock
 					}
 
 					if (ra.rooms [roomNo].fa.IsEnoughFurniture (maxNumOfFurn)) {
-						Debug.Log ("room" + roomNo + "is Set TRUE");
 						ra.roomsIsFull [roomNo] = true;
 					}
 
-					counter++;
-					if (counter > 200) {
-						Debug.Log ("Too many Loops");
+					if (++counter > 400) {
+						Debug.Log ("Too many loops.");
 						break;
 					}
 				}
@@ -119,6 +129,22 @@ namespace RoomEscape {
 				printInfo ();
 				gen = true;
 			}
+		}
+
+		// function for loading furniture set prefab
+		Object getFurnitureSetPrefab (int needAgainstWall, int needLocks, out int againstWall, out int locations, out string lockTypes, out List<KeyValuePair<string, string>> pathList) {
+			int getNum;
+			do {
+				getNum = prng.Next (0, furnitureSetDb.GetElementsByTagName("FurnitureSet").Count);
+				againstWall = int.Parse (furnitureSetDb.GetElementsByTagName ("AgainstWall") [getNum].InnerText);
+				locations = int.Parse (furnitureSetDb.GetElementsByTagName ("Locations") [getNum].InnerText);
+				lockTypes = furnitureSetDb.GetElementsByTagName ("Locks") [getNum].InnerText;
+			} while ((needLocks == 0 && lockTypes != "") || (needLocks == 1 && lockTypes == "") || (needAgainstWall != againstWall && needAgainstWall != -1));
+			pathList = new List<KeyValuePair<string, string>> ();
+			foreach (XmlNode node in furnitureSetDb.GetElementsByTagName ("Anchors") [getNum].ChildNodes) {
+				pathList.Add (new KeyValuePair<string, string> (node.Attributes ["id"].Value, node.ChildNodes.Item(prng.Next(0, node.ChildNodes.Count)).InnerText));
+			}
+			return Resources.Load (furnitureSetDb.GetElementsByTagName ("Path") [getNum].InnerText);
 		}
 
 		// function for loading furniture prefab
@@ -191,6 +217,24 @@ namespace RoomEscape {
 			registerInteractiveObject (door);
 		}
 
+		// function for generating a set of furnitures
+		void generateFurnitureSet (Room room, int needLocks, out string lockTypes) {
+			int againstWall, locations;
+			List<KeyValuePair<string, string>> pathList = new List<KeyValuePair<string, string>> ();
+			GameObject furnitureSet = (GameObject)Instantiate (getFurnitureSetPrefab (-1, needLocks, out againstWall, out locations, out lockTypes, out pathList));
+			if (room.fa.AllocateFurnitureSet (furnitureSet, againstWall)) {
+				for (int i = 0; i < furnitureSet.transform.childCount; i++) {
+					foreach (KeyValuePair<string, string> path in pathList) {
+						if (path.Key == furnitureSet.transform.GetChild (i).name) {
+							generateFurniture (room, path.Value, furnitureSet.transform.GetChild (i).gameObject);
+						}
+					}
+				}
+			} else {
+				Destroy (furnitureSet);
+			}
+		}
+
 		// function for generating a new furniture
 		void generateFurniture (Room room, int needLocks) {
 			int againstWall, locations, lockLocations;
@@ -201,12 +245,23 @@ namespace RoomEscape {
 				Destroy (furniture);
 			}
 		}
+		void generateFurniture (Room room, string path, GameObject parent) {
+			Debug.Log (path);
+			GameObject furniture = (GameObject)Instantiate (Resources.Load (path));
+			furniture.transform.SetParent (parent.transform);
+			if (room.fa.AllocateFurniture (furniture)) {
+				registerInteractiveObject (furniture);
+			} else {
+				Destroy (furniture);
+			}
+		}
 
-		int getRoomDecision(ref int openRoomFactor, int maxNumOfRoom) {
-			int roomNo;
+		bool getRoomDecision(ref int roomNo, ref int openRoomFactor, int maxNumOfRoom) {
+			if (roomNo != -1 && ra.rooms [roomNo].fa.IsNoFurniture ())
+				return true;
 			int prngTry = prng.Next (0, openRoomFactor);
+			Debug.Log (Time.realtimeSinceStartup + ": prng is " + prngTry);
 			if (ra.rooms.Count == 0 || (prngTry == 0 && ra.rooms.Count < maxNumOfRoom)) {
-				Debug.Log (Time.realtimeSinceStartup + " Gen Room");
 				generateRoom ();
 				roomNo = ra.rooms.Count - 1;
 				generateFurnitureDecision (ra.rooms [roomNo]);
@@ -221,10 +276,10 @@ namespace RoomEscape {
 				}
 				if (countLoop > ra.rooms.Count) {
 					if (openRoomFactor > 1) openRoomFactor--;
-					return -1;
+					return false;
 				}
 			}
-			return roomNo;
+			return true;
 		}
 
 		int generateKeyForLockDecision () {
@@ -244,11 +299,12 @@ namespace RoomEscape {
 
 		// function for generating a new furniture decision
 		void generateFurnitureDecision (Room room) {
+			string lockType;
 			if (room.fa.IsNoFurniture ()) {
-				generateFurniture (room, 0);
+				generateFurnitureSet (room, 0, out lockType);
 			} else {
-				generateFurniture (room, 1);
-				generateLock ("Drawer");
+				generateFurnitureSet (room, 1, out lockType);
+				generateLock (lockType);
 			}
 		}
 
@@ -290,7 +346,7 @@ namespace RoomEscape {
 				else if (obj.transform.GetChild (i).CompareTag ("location")) {
 					ia.AllocateLocation (obj.transform.GetChild (i).gameObject);
 				}
-				else if (obj.transform.GetChild (i).CompareTag ("nonStaticObjPull") || obj.transform.GetChild (i).CompareTag ("nonStaticObjRotate"))
+				else if (obj.transform.GetChild (i).CompareTag ("nonStaticObjPull") || obj.transform.GetChild (i).CompareTag ("nonStaticObjRotate") || obj.transform.GetChild (i).CompareTag ("nonStaticObjSwitch"))
 					ia.AllocateFurnIntObj (obj.transform.GetChild (i).gameObject);
 				if (obj.transform.GetChild (i).childCount != 0)
 					registerInteractiveObject (obj.transform.GetChild (i).gameObject);

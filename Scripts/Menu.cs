@@ -16,7 +16,7 @@ namespace RoomEscape {
 		}
 
 		public void GoToGame() {
-			SceneManager.LoadScene ("RoomEscape");
+			SceneManager.LoadScene ("Generating");
 		}
 
 		public string GetSeed () {

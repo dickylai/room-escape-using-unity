@@ -17,12 +17,21 @@ namespace RoomEscape {
 			state = 1;
 			obj = prefab;
 			name = prefab.name;
+			obj.transform.SetParent (location.GetGameObject ().transform.parent);
+			if (!location.GetGameObject ().transform.parent.CompareTag("door") && (location.GetGameObject ().transform.parent.rotation.y + 360) % 360 != (obj.transform.rotation.y + 360) % 360) {
+				obj.transform.localScale = new Vector3 (obj.transform.localScale.z, obj.transform.localScale.y, obj.transform.localScale.x);
+			}
 			this.originX = location.GetOriginX ();
 			this.originY = location.GetOriginY ();
 			this.originZ = location.GetOriginZ ();
 			this.nextType = nextType;
 			obj.transform.position = new Vector3(originX, originY, originZ);
 			obj.transform.SetParent (location.GetGameObject ().transform.parent);
+			if (!location.GetGameObject ().transform.parent.CompareTag ("door")) {
+				obj.GetComponent<Collider> ().enabled = false;
+				obj.transform.rotation = obj.transform.parent.rotation;
+				obj.GetComponent<Collider> ().enabled = true;
+			}
 		}
 
 		public InteractiveObject (Location location, GameObject prefab) {
