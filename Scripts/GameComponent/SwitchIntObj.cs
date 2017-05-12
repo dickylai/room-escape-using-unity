@@ -6,7 +6,7 @@ namespace RoomEscape {
 
 	public class SwitchIntObj : InteractiveObject {
 		private bool isOpened;
-		public SwitchIntObj (Location location, GameObject prefab) : base (location, prefab) {
+		public SwitchIntObj (Location location, GameObject prefab, int keyNo) : base (location, prefab, keyNo) {
 			isOpened = false;
 		}
 

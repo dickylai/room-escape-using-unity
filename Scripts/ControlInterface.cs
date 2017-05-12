@@ -15,6 +15,7 @@ namespace RoomEscape {
 
 		private List<Image> thumbnails;
 		private List<PickIntObj> objs;
+		private int itemsClick;
 		private RoomGenerator roomGenerator;
 		private Menu menu;
 
@@ -24,6 +25,7 @@ namespace RoomEscape {
 			menu = GetComponent<Menu> ();
 			thumbnails = new List<Image> ();
 			objs = new List<PickIntObj> ();
+			itemsClick = 0;
 			thumbnails.AddRange (panel.GetComponentsInChildren<Image> ());
 
 			seedText.text = " Seed: \"" + menu.GetSeed () + "\"";
@@ -41,11 +43,9 @@ namespace RoomEscape {
 				if (Physics.Raycast (ray, out hit, 1.8f)) {
 					Debug.Log (hit.transform.tag);
 					if (hit.transform.CompareTag ("staticObj") || hit.transform.CompareTag ("nonStaticObjPull") || hit.transform.CompareTag ("nonStaticObjRotate") || hit.transform.CompareTag ("nonStaticObjSwitch") || hit.transform.CompareTag ("door")) {
-						Debug.Log (Time.timeSinceLevelLoad + hit.transform.tag + " hihi");
 						InteractiveObject interactiveObject = roomGenerator.ia.GetInteractiveObject (hit.transform.gameObject);
 						if (interactiveObject != null) {
-							Debug.Log (Time.timeSinceLevelLoad + " hihi2");
-							roomGenerator.ia.GetLink (interactiveObject, getSelectedObj ());
+							if (itemsClick == 1 || itemsClick == 0) roomGenerator.ia.GetLink (interactiveObject, getSelectedObj ());
 							updateInventory ();
 						}
 					}
@@ -55,10 +55,17 @@ namespace RoomEscape {
 				if (Input.GetKeyDown ("" + ((key + 1) % 10))) {
 					if (objs.Count > key) {
 						objs [key].Choose ();
-						if (objs [key].GetState () == 1)
+						if (objs [key].GetState () == 1) {
 							thumbnails [key + 1].color = Color.white;
-						else
+							itemsClick++;
+							if (itemsClick == 2) {
+								roomGenerator.ia.CheckCombine (getSelectedObj (), getSecondSelectedObj ());
+								updateInventory ();
+							}
+						} else {
 							thumbnails [key + 1].color = Color.gray;
+							itemsClick--;
+						}
 						break;
 					}
 				}
@@ -79,10 +86,22 @@ namespace RoomEscape {
 			return null;
 		}
 
+		PickIntObj getSecondSelectedObj () {
+			int i = 0;
+			foreach (PickIntObj obj in objs) {
+				if (obj.GetState () == 1)
+					i++;
+				if (i == 2)
+					return obj;				
+			}
+			return null;
+		}
+
 		void updateInventory() {
+			itemsClick = 0;
 			objs = new List<PickIntObj> ();
 			foreach (InteractiveObject item in roomGenerator.ia.interactiveObjects) {
-				if (item.GetType ().Name == "PickIntObj" && (item.GetState () == 2 || item.GetState () == 1))
+				if ((item.GetType ().Name == "InterIntObj" || item.GetType ().Name == "PickIntObj") && (item.GetState () == 2 || item.GetState () == 1))
 					objs.Add ((PickIntObj)item);
 			}
 			for (int i = 1; i < 11; i++) {

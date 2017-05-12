@@ -7,12 +7,14 @@ namespace RoomEscape {
 	// Subclass of InteractiveObject for pick up object
 	public class PickIntObj : InteractiveObject {
 
-		private string thumbnail;
+		protected string thumbnail;
 
-		public PickIntObj (Location location, GameObject prefab, List<string> nextType, string thumbnail) : base (location, prefab, nextType) {
+		public PickIntObj (Location location, GameObject prefab, List<string> nextType, string thumbnail, int keyNo) : base (location, prefab, nextType, keyNo) {
 			this.thumbnail = thumbnail;
 			state = 3;
 		}
+
+		public PickIntObj (GameObject prefab, List<string> nextType, int keyNo) : base (prefab, nextType, keyNo) {}
 
 		public override void Click () {
 			obj.gameObject.transform.GetComponent<Interaction> ().Disappear ();
@@ -25,6 +27,7 @@ namespace RoomEscape {
 			} else {
 				state = 2;
 			}
+			isSolved = false;
 		}
 
 		public string GetThumbnail () {

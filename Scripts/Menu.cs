@@ -4,8 +4,15 @@ using UnityEngine.SceneManagement;
 
 namespace RoomEscape {
 	public class Menu : MonoBehaviour {
-		static string seed = "";
-		static int difficulty = 0;
+		static string seed;
+		static int difficulty;
+
+		void Start () {
+			if (SceneManager.GetActiveScene ().name == "Menu") {
+				seed = "";
+				difficulty = 0;
+			}
+		}
 
 		public void SetSeed(string input) {
 			seed = input;

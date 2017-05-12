@@ -95,8 +95,8 @@ namespace RoomEscape {
 				// generation algorithm as follows
 				int counter = 0;
 				int openRoomFactor = 2 * maxNumOfRoom;
-				while (ra.rooms.Count <= maxNumOfRoom) {
-					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull ()) { // end the generation
+				while (true) {
+					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull () && ia.IsEmptyList ()) { // end the generation
 						generateKeyForLockDecision ();
 						break;
 					}
@@ -104,8 +104,14 @@ namespace RoomEscape {
 						continue;
 
 					if (ia.IsEmptyLocationExisted ()) {
-						if (generateKeyForLockDecision() == -1) { // no lock
-							generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture with lock(s)
+						if (ia.IsEmptyList ()) {
+							if (generateKeyForLockDecision() == -1) { // no lock
+								generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture with lock(s)
+							}
+						} else {
+							if (generateSplitKey ()) {
+								if (!ia.IsEmptyList ()) generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture with no lock(s)
+							}
 						}
 					} else {
 						generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture without lock
@@ -194,11 +200,24 @@ namespace RoomEscape {
 				getNum = prng.Next (0, intObjDb.GetElementsByTagName ("Obj").Count);
 				nextType = new List<string> ();
 				foreach (XmlNode node in intObjDb.GetElementsByTagName ("NextTypes") [getNum]) {
-					nextType.Add(node.InnerText);
+					nextType.Add (node.InnerText);
 				}
 				thumbnail = intObjDb.GetElementsByTagName ("Thumbnail") [getNum].InnerText;
-			} while ((type != "") && (type != intObjDb.GetElementsByTagName ("Type") [getNum].InnerText));
+			} while ((type != "") && (type != intObjDb.GetElementsByTagName ("Type") [getNum].InnerText) || ((nextType.Count == 1) && nextType [0] == "NULL"));
+			ia.priorityList.AddRange (nextType);
 			return Resources.Load (intObjDb.GetElementsByTagName ("Path") [getNum].InnerText);
+		}
+
+		Object getSplitIntObjPrefab (string name, out List<string> nextType, out string thumbnail) {
+			nextType = new List<string> ();
+			thumbnail = "";
+			for (int i = 0; i < intObjDb.GetElementsByTagName ("Obj").Count; i++) {
+				if (intObjDb.GetElementsByTagName ("Name") [i].InnerText == name) {
+					thumbnail = intObjDb.GetElementsByTagName ("Thumbnail") [i].InnerText;
+					return Resources.Load (intObjDb.GetElementsByTagName ("Path") [i].InnerText);
+				}
+			}
+			return null;
 		}
 
 		// function for generating a new room
@@ -288,9 +307,9 @@ namespace RoomEscape {
 				// check if any locks without a key
 				if (!ia.locks [i].HasNext ()) {
 					if (!generateIntObj ()) {
-						return 1;
+						return 0;
 					}
-					return 0;
+					return 1;
 				}
 			}
 			// lock not enough
@@ -300,11 +319,15 @@ namespace RoomEscape {
 		// function for generating a new furniture decision
 		void generateFurnitureDecision (Room room) {
 			string lockType;
-			if (room.fa.IsNoFurniture ()) {
-				generateFurnitureSet (room, 0, out lockType);
+			if (ia.IsEmptyList ()) {
+				if (room.fa.IsNoFurniture ()) {
+					generateFurnitureSet (room, 0, out lockType);
+				} else {
+					generateFurnitureSet (room, 1, out lockType);
+					generateLock (lockType);
+				}
 			} else {
-				generateFurnitureSet (room, 1, out lockType);
-				generateLock (lockType);
+				generateFurnitureSet (room, 0, out lockType);
 			}
 		}
 
@@ -326,15 +349,40 @@ namespace RoomEscape {
 			if (ia.IsEmptyLocationExisted ()) {
 				if (ia.GetNextObjType (out chooseObj, out type)) {
 					GameObject obj = (GameObject)Instantiate (getIntObjPrefab (type, out nextType, out thumbnail));
-					if (ia.AllocatePickIntObj (chooseObj, obj, nextType, thumbnail)) {
-						return true;
+					if (ia.IsEmptyList ()) {
+						if (ia.AllocatePickIntObj (chooseObj, obj, nextType, thumbnail)) {
+							return true;
+						} else {
+							Destroy (obj);
+							return false;
+						}
 					} else {
-						Destroy (obj);
-						return false;
+						// need to split
+						if (ia.AllocateInterIntObj (chooseObj, obj, nextType, thumbnail)) {
+							return true;
+						} else {
+							Destroy (obj);
+							ia.priorityList.Clear ();
+							return false;
+						}
 					}
 				}
 			}
 			return false;
+		}
+
+		bool generateSplitKey () {
+			List<string> nextType;
+			string thumbnail;
+			GameObject obj = (GameObject)Instantiate (getSplitIntObjPrefab (ia.priorityList [0], out nextType, out thumbnail));
+			if (ia.AllocateSplitIntObj (obj, nextType, thumbnail)) {
+				ia.priorityList.RemoveAt (0);
+				Debug.Log (ia.priorityList.Count + "COUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNT");
+				return true;
+			} else {
+				Destroy (obj);
+				return false;
+			}
 		}
 
 		// function for registering interactive objects/ location under a furniture
