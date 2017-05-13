@@ -48,6 +48,10 @@ namespace RoomEscape {
 							if (itemsClick == 1 || itemsClick == 0) roomGenerator.ia.GetLink (interactiveObject, getSelectedObj ());
 							updateInventory ();
 						}
+						if (roomGenerator.ia.IsGameEnd ()) {
+							menu.PlayWin ();
+							StartCoroutine(LoadNewScene());
+						}
 					}
 				}
 			}
@@ -119,6 +123,13 @@ namespace RoomEscape {
 			float xMin = (Screen.width / 2) - (crosshairImage.width / 4);
 			float yMin = (Screen.height / 2) - (crosshairImage.height / 4);
 			GUI.DrawTexture(new Rect(xMin, yMin, crosshairImage.width / 2, crosshairImage.height / 2), crosshairImage);
+		}
+
+		IEnumerator LoadNewScene() {
+			yield return new WaitForSeconds(1);
+			Cursor.lockState = CursorLockMode.None;
+			Cursor.visible = true;
+			SceneManager.LoadScene ("Menu");
 		}
 	}
 }

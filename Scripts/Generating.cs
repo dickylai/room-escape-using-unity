@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 using System.Threading;
+using UnityEngine.SceneManagement;
 
 namespace RoomEscape {
 	public class Generating : MonoBehaviour {
@@ -37,11 +38,7 @@ namespace RoomEscape {
 		IEnumerator LoadNewScene() {
 			yield return new WaitForSeconds(3);
 
-			AsyncOperation async = Application.LoadLevelAsync("RoomEscape");
-
-			while (!async.isDone) {
-				yield return null;
-			}
+			SceneManager.LoadScene ("RoomEscape");
 		}
 	}
 }

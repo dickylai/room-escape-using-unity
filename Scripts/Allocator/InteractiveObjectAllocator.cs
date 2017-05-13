@@ -212,20 +212,6 @@ namespace RoomEscape {
 
 		// function for shifting keys in the final state of generation
 		public void ShiftKeys () {
-//			Vector3 finalPosition = new Vector3 ();
-//			Transform finalParent = null;
-//			if (keys.Count > 1) {
-//				for (int i = keys.Count - 1; i > 0; i--) {
-//					if (i == keys.Count - 1) {
-//						finalPosition = keys [i].GetObjPosition ();
-//						finalParent = keys [i].GetObjParent ();
-//					}
-//					keys [i].SetObjPosition (keys [i - 1].GetObjPosition ());
-//					keys [i].SetObjParent (keys [i - 1].GetObjParent ());
-//				}
-//				keys [0].SetObjPosition (finalPosition);
-//				keys [0].SetObjParent (finalParent);
-//			}
 			shiftAllKeysForOnePosition ();
 			shiftSplitKey ();
 		}
@@ -283,6 +269,10 @@ namespace RoomEscape {
 
 		public void RoomIsAdded () {
 			roomOpenPosition.Add (keys.Count);
+		}
+
+		public bool IsGameEnd () {
+			return doors [0].IsOpened ();
 		}
 
 		public bool IsEmptyList() {

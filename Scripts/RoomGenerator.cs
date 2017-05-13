@@ -77,14 +77,14 @@ namespace RoomEscape {
 				difficulty = menu.GetDifficulty ();
 				// set the room difficulty parameters
 				if (difficulty == 0) {
-					maxNumOfRoom = prng.Next (1, 3);
-					maxNumOfFurn = prng.Next (3, 5);
+					maxNumOfRoom = prng.Next (2, 3);
+					maxNumOfFurn = prng.Next (3, 4);
 				} else if (difficulty == 1) {
-					maxNumOfRoom = prng.Next (3, 5);
-					maxNumOfFurn = prng.Next (3, 5);
+					maxNumOfRoom = prng.Next (4, 5);
+					maxNumOfFurn = prng.Next (4, 5);
 				} else if (difficulty == 2) {
-					maxNumOfRoom = prng.Next (4, 6);
-					maxNumOfFurn = prng.Next (4, 6);
+					maxNumOfRoom = prng.Next (5, 6);
+					maxNumOfFurn = prng.Next (4, 5);
 				} 
 				Debug.Log ("maxNumOfRoom = " + maxNumOfRoom + "\nmaxNumOfFurn = " + maxNumOfFurn);
 
@@ -134,7 +134,7 @@ namespace RoomEscape {
 						ra.roomsIsFull [roomNo] = true;
 					}
 
-					if (++counter > 400) {
+					if (++counter > 5000) {
 						Debug.Log ("Too many loops.");
 						break;
 					}
@@ -142,7 +142,7 @@ namespace RoomEscape {
 				ia.ShiftKeys ();
 
 				// reset the position of the carmera
-				this.transform.position = new Vector3 (0, 0, 0);
+				this.transform.position = new Vector3 (0, 0, 0 + ra.rooms[0].GetDepth () / 2 - 0.7f);
 
 				// print the game info in console
 				printInfo ();
