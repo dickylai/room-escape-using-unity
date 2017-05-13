@@ -7,7 +7,7 @@ namespace RoomEscape {
 	// Subclass of InteractiveObject for pick up object
 	public class PullIntObj : InteractiveObject {
 		private bool isOpened;
-		public PullIntObj (Location location, GameObject prefab, int keyNo) : base (location, prefab, keyNo) {
+		public PullIntObj (Location location, GameObject prefab) : base (location, prefab) {
 			isOpened = false;
 		}
 

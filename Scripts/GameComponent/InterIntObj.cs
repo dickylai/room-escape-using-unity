@@ -7,7 +7,7 @@ namespace RoomEscape {
 	// Subclass of InteractiveObject for pick up object
 	public class InterIntObj : PickIntObj {
 
-		public InterIntObj (Location location, GameObject prefab, List<string> nextType, string thumbnail, int keyNo) : base (prefab, nextType, keyNo) {
+		public InterIntObj (Location location, GameObject prefab, List<string> nextType, string thumbnail) : base (prefab, nextType) {
 			prefab.SetActive (false);
 			this.thumbnail = thumbnail;
 			state = 3;

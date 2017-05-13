@@ -14,7 +14,10 @@ namespace RoomEscape {
 		private System.Random prng;
 		public List<Door> doors;
 		public List<Lock> locks;
-		public List<List<InteractiveObject>> keys;
+		public List<InteractiveObject> keys;
+		List<InteractiveObject> tempKeys;
+		List<KeyValuePair<InteractiveObject, int>> tempSplitKeys;
+		private List<int> roomOpenPosition;
 
 		public InteractiveObjectAllocator (System.Random prng) {
 			relationList = new List<KeyValuePair<InteractiveObject, InteractiveObject>> ();
@@ -27,8 +30,10 @@ namespace RoomEscape {
 			this.prng = prng;
 			this.doors = new List<Door> ();
 			this.locks = new List<Lock> ();
-			this.keys = new List<List<InteractiveObject>> ();
-			this.keys.Add (new List<InteractiveObject> ());
+			this.keys = new List<InteractiveObject> ();
+			this.tempKeys = new List<InteractiveObject> ();
+			this.tempSplitKeys = new List<KeyValuePair<InteractiveObject, int>> ();
+			roomOpenPosition = new List<int> (); // record room open moment with key
 		}
 
 		// function for checking if a location is empty 
@@ -60,7 +65,7 @@ namespace RoomEscape {
 			for (int chooseLocation = 0; chooseLocation < lockLocations.Count; chooseLocation++) {
 				if (lockLocations [chooseLocation].Occupy ()) {
 					InteractiveObject linkedObj = GetInteractiveObject (lockLocations [chooseLocation].GetGameObject ().transform.parent.gameObject);
-					InteractiveObject intObj = new Lock (lockLocations [chooseLocation], obj, nextType, linkedObj.GetKeyNo ());
+					InteractiveObject intObj = new Lock (lockLocations [chooseLocation], obj, nextType);
 					interactiveObjects.Add (intObj);
 					locks.Add ((Lock)intObj);
 					relationList.Add (
@@ -80,11 +85,11 @@ namespace RoomEscape {
 			int chooseLocation = locations.Count - 1;
 			if (locations [chooseLocation].Occupy ()) {
 				if (obj.transform.CompareTag ("nonStaticObjPull")) {
-					intObj = new PullIntObj (locations [chooseLocation], obj, prng.Next(0, keys.Count));
+					intObj = new PullIntObj (locations [chooseLocation], obj);
 				} else if (obj.transform.CompareTag ("nonStaticObjRotate")) {
-					intObj = new RotateIntObj (locations [chooseLocation], obj, prng.Next(0, keys.Count));
+					intObj = new RotateIntObj (locations [chooseLocation], obj);
 				} else if (obj.transform.CompareTag ("nonStaticObjSwitch")) {
-					intObj = new SwitchIntObj (locations [chooseLocation], obj, prng.Next(0, keys.Count));
+					intObj = new SwitchIntObj (locations [chooseLocation], obj);
 				} 
 				interactiveObjects.Add (intObj);
 			}
@@ -94,13 +99,13 @@ namespace RoomEscape {
 		public bool AllocatePickIntObj (int chooseObj, GameObject obj, List<string> nextType, string thumbnail) {
 			for (int chooseLocation = 0; chooseLocation < locations.Count; chooseLocation++) {
 				if (locations [chooseLocation].Occupy ()) {
-					InteractiveObject intObj = new PickIntObj (locations [chooseLocation], obj, nextType, thumbnail, locks [chooseObj].GetKeyNo ());
+					InteractiveObject intObj = new PickIntObj (locations [chooseLocation], obj, nextType, thumbnail);
 					interactiveObjects.Add (intObj);
 					relationList.Add (
 						new KeyValuePair<InteractiveObject,InteractiveObject> (
 							intObj, 
 							locks [chooseObj]));
-					keys[intObj.GetKeyNo ()].Add (intObj);
+					keys.Add (intObj);
 					return true;
 				}
 			}
@@ -109,32 +114,28 @@ namespace RoomEscape {
 
 		// function for allocating a intermediate object
 		public bool AllocateInterIntObj (int chooseObj, GameObject obj, List<string> nextType, string thumbnail) {
-			Debug.Log (obj.name + "HIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHIHI");
-			InteractiveObject intObj = new InterIntObj (null, obj, nextType, thumbnail, locks [chooseObj].GetKeyNo ());
+			InteractiveObject intObj = new InterIntObj (null, obj, nextType, thumbnail);
 			interactiveObjects.Add (intObj);
 			nonShownInteractiveObjects.Add ((InterIntObj) intObj);
 			relationList.Add (
 				new KeyValuePair<InteractiveObject,InteractiveObject> (
 					intObj, 
 					locks [chooseObj]));
-			// keys[intObj.GetKeyNo ()].Add (intObj);
+			keys.Add (intObj);
 			lastIntObj = (InterIntObj) intObj;
 			return true;
 		}
 
 		public bool AllocateSplitIntObj (GameObject obj, List<string> nextType, string thumbnail) {
-			if (priorityList.Count == 2) keys.Add (new List<InteractiveObject> ());
-
 			for (int chooseLocation = 0; chooseLocation < locations.Count; chooseLocation++) {
 				if (locations [chooseLocation].Occupy ()) {
-					Debug.Log (locations [chooseLocation].GetOriginX () + " " + locations [chooseLocation].GetOriginY () + " " + locations [chooseLocation].GetOriginZ () + " CHECK COOR !!!!!!!!!!!!!!!");
-					InteractiveObject intObj = new PickIntObj (locations [chooseLocation], obj, nextType, thumbnail, lastIntObj.GetKeyNo () + (priorityList.Count % 2));
+					InteractiveObject intObj = new PickIntObj (locations [chooseLocation], obj, nextType, thumbnail);
 					interactiveObjects.Add (intObj);
 					relationList.Add (
 						new KeyValuePair<InteractiveObject,InteractiveObject> (
 							intObj, 
 							lastIntObj));
-					keys[intObj.GetKeyNo ()].Add (intObj);
+					keys.Add (intObj);
 					return true;
 				}
 			}
@@ -167,14 +168,21 @@ namespace RoomEscape {
 		public void GetLink (InteractiveObject intObj, PickIntObj selectedIntObj) {
 			if (selectedIntObj != null)
 				selectedIntObj.Click ();
+			bool related = false;
 			for (int i = 0; i < relationList.Count; i++) {
 				if (relationList [i].Value == intObj) {
+					if (relationList [i].Key == selectedIntObj)
+						related = true;
 					if (!relationList[i].Key.IsSolved ()) {
 						if (selectedIntObj != null)
 							selectedIntObj.Choose ();
 						return;
 					}
 				} 
+			}
+			if (!related && selectedIntObj != null) {
+				selectedIntObj.Choose ();
+				return;
 			}
 			intObj.Click ();
 		}
@@ -204,22 +212,77 @@ namespace RoomEscape {
 
 		// function for shifting keys in the final state of generation
 		public void ShiftKeys () {
-			foreach (List<InteractiveObject> key in keys) {
-				Vector3 finalPosition = new Vector3 ();
-				Transform finalParent = null;
-				for (int i = key.Count - 1; i > 0; i--) {
-					if (i == key.Count - 1) {
-						finalPosition = key [i].GetObjPosition ();
-						finalParent = key [i].GetObjParent ();
+//			Vector3 finalPosition = new Vector3 ();
+//			Transform finalParent = null;
+//			if (keys.Count > 1) {
+//				for (int i = keys.Count - 1; i > 0; i--) {
+//					if (i == keys.Count - 1) {
+//						finalPosition = keys [i].GetObjPosition ();
+//						finalParent = keys [i].GetObjParent ();
+//					}
+//					keys [i].SetObjPosition (keys [i - 1].GetObjPosition ());
+//					keys [i].SetObjParent (keys [i - 1].GetObjParent ());
+//				}
+//				keys [0].SetObjPosition (finalPosition);
+//				keys [0].SetObjParent (finalParent);
+//			}
+			shiftAllKeysForOnePosition ();
+			shiftSplitKey ();
+		}
+
+		private void shiftAllKeysForOnePosition () {
+			Vector3 finalPosition = new Vector3 ();
+			Transform finalParent = null;
+			tempKeys.AddRange (keys);
+			if (tempKeys.Count > 1) {
+				int tempKeysLength = tempKeys.Count;
+				int limit = roomOpenPosition[0];
+				for (int i = 0; i < tempKeysLength; i++) {
+					if (roomOpenPosition.Count > 1)
+						if (i >= roomOpenPosition[1]) {
+							roomOpenPosition.RemoveAt (0);
+							limit = roomOpenPosition[0];
+						}
+					if (tempKeys [i].GetType ().Name == "InterIntObj") {
+						tempSplitKeys.Add (new KeyValuePair<InteractiveObject, int> (tempKeys [i + 2], System.Math.Max(i - 1, limit)));
+						tempKeys.RemoveAt (i + 2);
+						tempKeys.RemoveAt (i);
+						tempKeysLength -= 2;
+						for (int j = 0; j < roomOpenPosition.Count; j++) {
+							if (i + 2 < roomOpenPosition[j])
+								roomOpenPosition[j]--;
+							if (i < roomOpenPosition[j])
+								roomOpenPosition[j]--;
+						}
 					}
-					key [i].SetObjPosition (key [i - 1].GetObjPosition ());
-					key [i].SetObjParent (key [i - 1].GetObjParent ());
 				}
-				if (key.Count > 0) {
-					key [0].SetObjPosition (finalPosition);
-					key [0].SetObjParent (finalParent);
+
+				for (int i = tempKeys.Count - 1; i > 0; i--) {
+					if (i == tempKeys.Count - 1) {
+						finalPosition = tempKeys [i].GetObjPosition ();
+						finalParent = tempKeys [i].GetObjParent ();
+					}
+					tempKeys [i].SetObjPosition (tempKeys [i - 1].GetObjPosition ());
+					tempKeys [i].SetObjParent (tempKeys [i - 1].GetObjParent ());
 				}
+				tempKeys [0].SetObjPosition (finalPosition);
+				tempKeys [0].SetObjParent (finalParent);
 			}
+		}
+
+		private void shiftSplitKey () {
+			foreach (KeyValuePair<InteractiveObject, int> pair in tempSplitKeys) {
+				Vector3 tempPosition = tempKeys [pair.Value].GetObjPosition ();
+				Transform tempParent = tempKeys [pair.Value].GetObjParent ();
+				tempKeys [pair.Value].SetObjPosition (pair.Key.GetObjPosition ());
+				tempKeys [pair.Value].SetObjParent (pair.Key.GetObjParent ());
+				pair.Key.SetObjPosition (tempPosition);
+				pair.Key.SetObjParent (tempParent);
+			}
+		}
+
+		public void RoomIsAdded () {
+			roomOpenPosition.Add (keys.Count);
 		}
 
 		public bool IsEmptyList() {

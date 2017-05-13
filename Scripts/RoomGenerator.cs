@@ -96,8 +96,21 @@ namespace RoomEscape {
 				int counter = 0;
 				int openRoomFactor = 2 * maxNumOfRoom;
 				while (true) {
-					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull () && ia.IsEmptyList ()) { // end the generation
-						generateKeyForLockDecision ();
+					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull ()) { // end the generation
+						if (ia.IsEmptyList ()) {
+							generateKeyForLockDecision ();
+							if (!ia.IsEmptyList ()) 
+								generateFurnitureDecision (ra.rooms [roomNo]);
+						} 
+						if (!ia.IsEmptyList ()) {
+							generateSplitKey ();
+							if (!ia.IsEmptyList ()) {
+								do {
+									generateFurnitureDecision (ra.rooms [roomNo]); // generate furniture with no lock(s)
+								} while (!ia.IsEmptyLocationExisted ());
+								generateSplitKey ();
+							}
+						}
 						break;
 					}
 					if (!getRoomDecision (ref roomNo, ref openRoomFactor, maxNumOfRoom)) // no room selected successfully
@@ -227,6 +240,7 @@ namespace RoomEscape {
 				generateDoor (doorOriginX, doorOriginZ, doorRotation);
 				generateLock ("Door");
 			}
+			ia.RoomIsAdded ();
 		}
 
 		// function called by generateRoom for generating a new door
@@ -265,7 +279,6 @@ namespace RoomEscape {
 			}
 		}
 		void generateFurniture (Room room, string path, GameObject parent) {
-			Debug.Log (path);
 			GameObject furniture = (GameObject)Instantiate (Resources.Load (path));
 			furniture.transform.SetParent (parent.transform);
 			if (room.fa.AllocateFurniture (furniture)) {
@@ -276,10 +289,9 @@ namespace RoomEscape {
 		}
 
 		bool getRoomDecision(ref int roomNo, ref int openRoomFactor, int maxNumOfRoom) {
-			if (roomNo != -1 && ra.rooms [roomNo].fa.IsNoFurniture ())
+			if (roomNo != -1 && (ra.rooms [roomNo].fa.IsNoFurniture () || !ia.IsEmptyList ()))
 				return true;
 			int prngTry = prng.Next (0, openRoomFactor);
-			Debug.Log (Time.realtimeSinceStartup + ": prng is " + prngTry);
 			if (ra.rooms.Count == 0 || (prngTry == 0 && ra.rooms.Count < maxNumOfRoom)) {
 				generateRoom ();
 				roomNo = ra.rooms.Count - 1;
@@ -377,7 +389,6 @@ namespace RoomEscape {
 			GameObject obj = (GameObject)Instantiate (getSplitIntObjPrefab (ia.priorityList [0], out nextType, out thumbnail));
 			if (ia.AllocateSplitIntObj (obj, nextType, thumbnail)) {
 				ia.priorityList.RemoveAt (0);
-				Debug.Log (ia.priorityList.Count + "COUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNTCOUNT");
 				return true;
 			} else {
 				Destroy (obj);

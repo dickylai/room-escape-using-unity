@@ -10,15 +10,13 @@ namespace RoomEscape {
 		protected int state;
 		protected Vector3 location;
 		protected List<string> nextType;
-		protected int keyNo;
 
-		public InteractiveObject (Location location, GameObject prefab, List<string> nextType, int keyNo) {
+		public InteractiveObject (Location location, GameObject prefab, List<string> nextType) {
 			isSolved = false;
 			hasNext = false;
 			state = 1;
 			obj = prefab;
 			this.name = prefab.name;
-			this.keyNo = keyNo;
 			obj.transform.SetParent (location.GetGameObject ().transform.parent);
 			if (!location.GetGameObject ().transform.parent.CompareTag("door") && (location.GetGameObject ().transform.parent.rotation.y + 360) % 360 != (obj.transform.rotation.y + 360) % 360) {
 				obj.transform.localScale = new Vector3 (obj.transform.localScale.z, obj.transform.localScale.y, obj.transform.localScale.x);
@@ -36,23 +34,21 @@ namespace RoomEscape {
 			}
 		}
 
-		public InteractiveObject (GameObject prefab, List<string> nextType, int keyNo) {
+		public InteractiveObject (GameObject prefab, List<string> nextType) {
 			isSolved = false;
 			hasNext = false;
 			state = 1;
 			obj = prefab;
 			this.name = prefab.name;
-			this.keyNo = keyNo;
 			this.nextType = nextType;
 		}
 
-		public InteractiveObject (Location location, GameObject prefab, int keyNo) {
+		public InteractiveObject (Location location, GameObject prefab) {
 			isSolved = false;
 			hasNext = false;
 			state = 1;
 			obj = prefab;
 			this.name = prefab.name;
-			this.keyNo = keyNo;
 			this.originX = location.GetOriginX ();
 			this.originY = location.GetOriginY ();
 			this.originZ = location.GetOriginZ ();
@@ -111,10 +107,6 @@ namespace RoomEscape {
 
 		public int GetState() {
 			return state;
-		}
-
-		public int GetKeyNo() {
-			return keyNo;
 		}
 	}
 

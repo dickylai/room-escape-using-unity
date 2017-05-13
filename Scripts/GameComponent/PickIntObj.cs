@@ -9,12 +9,12 @@ namespace RoomEscape {
 
 		protected string thumbnail;
 
-		public PickIntObj (Location location, GameObject prefab, List<string> nextType, string thumbnail, int keyNo) : base (location, prefab, nextType, keyNo) {
+		public PickIntObj (Location location, GameObject prefab, List<string> nextType, string thumbnail) : base (location, prefab, nextType) {
 			this.thumbnail = thumbnail;
 			state = 3;
 		}
 
-		public PickIntObj (GameObject prefab, List<string> nextType, int keyNo) : base (prefab, nextType, keyNo) {}
+		public PickIntObj (GameObject prefab, List<string> nextType) : base (prefab, nextType) {}
 
 		public override void Click () {
 			obj.gameObject.transform.GetComponent<Interaction> ().Disappear ();

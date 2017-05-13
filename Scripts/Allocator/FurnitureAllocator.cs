@@ -50,7 +50,6 @@ namespace RoomEscape {
 
 		// function for checking if no furniture inside the room
 		public bool IsNoFurniture () {
-			Debug.Log (Time.realtimeSinceStartup + " furniture count: " + furnitures.Count);
 			return (furnitures.Count == 0) ? true : false;
 		}
 

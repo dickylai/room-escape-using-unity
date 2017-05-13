@@ -6,7 +6,7 @@ namespace RoomEscape {
 
 	public class RotateIntObj : InteractiveObject {
 		private bool isOpened;
-		public RotateIntObj (Location location, GameObject prefab, int keyNo) : base (location, prefab, keyNo) {
+		public RotateIntObj (Location location, GameObject prefab) : base (location, prefab) {
 			isOpened = false;
 		}
 

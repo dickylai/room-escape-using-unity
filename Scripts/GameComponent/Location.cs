@@ -10,7 +10,7 @@ namespace RoomEscape {
 			IsOccupied = false;
 			name = point.name;
 			obj = point;
-			Debug.Log("Location for " + obj.transform.parent.name + " is added as " + name);
+			// Debug.Log("Location for " + obj.transform.parent.name + " is added as " + name);
 			this.originX = point.transform.position.x;
 			this.originY = point.transform.position.y;
 			this.originZ = point.transform.position.z;
