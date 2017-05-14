@@ -12,6 +12,8 @@ namespace RoomEscape {
 
 		void Start () {
 			if (SceneManager.GetActiveScene ().name == "Menu") {
+				Cursor.lockState = CursorLockMode.None;
+				Cursor.visible = true;
 				seed = "";
 				difficulty = 0;
 				if (success)
