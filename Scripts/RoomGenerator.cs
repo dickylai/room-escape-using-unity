@@ -35,6 +35,7 @@ namespace RoomEscape {
 		// Classes contain methods for assigning different objects
 		public RoomAllocator ra;
 		public InteractiveObjectAllocator ia;
+		bool cannotSplit;
 
 		// Class for getting information from menu
 		private Menu menu;
@@ -95,6 +96,7 @@ namespace RoomEscape {
 				// generation algorithm as follows
 				int counter = 0;
 				int openRoomFactor = 2 * maxNumOfRoom;
+				cannotSplit = false;
 				while (true) {
 					if (ra.rooms.Count == maxNumOfRoom && ra.IsAllRoomsFull ()) { // end the generation
 						if (ia.IsEmptyList ()) {
@@ -334,6 +336,7 @@ namespace RoomEscape {
 			if (ia.IsEmptyList ()) {
 				if (room.fa.IsNoFurniture ()) {
 					generateFurnitureSet (room, 0, out lockType);
+					cannotSplit = true;
 				} else {
 					generateFurnitureSet (room, 1, out lockType);
 					generateLock (lockType);
@@ -363,6 +366,7 @@ namespace RoomEscape {
 					GameObject obj = (GameObject)Instantiate (getIntObjPrefab (type, out nextType, out thumbnail));
 					if (ia.IsEmptyList ()) {
 						if (ia.AllocatePickIntObj (chooseObj, obj, nextType, thumbnail)) {
+							cannotSplit = false;
 							return true;
 						} else {
 							Destroy (obj);
@@ -370,7 +374,7 @@ namespace RoomEscape {
 						}
 					} else {
 						// need to split
-						if (ia.AllocateInterIntObj (chooseObj, obj, nextType, thumbnail)) {
+						if (!cannotSplit && ia.AllocateInterIntObj (chooseObj, obj, nextType, thumbnail)) {
 							return true;
 						} else {
 							Destroy (obj);

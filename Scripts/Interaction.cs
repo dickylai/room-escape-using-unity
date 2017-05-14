@@ -51,6 +51,8 @@ public class Interaction : MonoBehaviour {
 		if (switching) {
 			this.transform.GetChild (0).gameObject.SetActive (!this.transform.GetChild (0).gameObject.activeSelf);
 			this.transform.GetChild (1).gameObject.SetActive (!this.transform.GetChild (1).gameObject.activeSelf);
+			if (this.transform.name == "box")
+				this.transform.GetChild (5).gameObject.SetActive (false);
 			switching = false;
 		}
 	}

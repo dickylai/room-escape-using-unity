@@ -44,10 +44,8 @@ namespace RoomEscape {
 					Debug.Log (hit.transform.tag);
 					if (hit.transform.CompareTag ("staticObj") || hit.transform.CompareTag ("nonStaticObjPull") || hit.transform.CompareTag ("nonStaticObjRotate") || hit.transform.CompareTag ("nonStaticObjSwitch") || hit.transform.CompareTag ("door")) {
 						InteractiveObject interactiveObject = roomGenerator.ia.GetInteractiveObject (hit.transform.gameObject);
-						if (interactiveObject != null) {
-							if (itemsClick == 1 || itemsClick == 0) roomGenerator.ia.GetLink (interactiveObject, getSelectedObj ());
-							updateInventory ();
-						}
+						if (itemsClick == 1 || itemsClick == 0) roomGenerator.ia.GetLink (interactiveObject, getSelectedObj ());
+						updateInventory ();
 						if (roomGenerator.ia.IsGameEnd ()) {
 							menu.PlayWin ();
 							StartCoroutine(LoadNewScene());

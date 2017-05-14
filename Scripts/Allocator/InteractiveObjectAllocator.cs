@@ -166,6 +166,10 @@ namespace RoomEscape {
 
 		// function for checking if the condition(s) of an obj is fulfilled
 		public void GetLink (InteractiveObject intObj, PickIntObj selectedIntObj) {
+			if (intObj == null) {
+				selectedIntObj.Choose ();
+				return;
+			}
 			if (selectedIntObj != null)
 				selectedIntObj.Click ();
 			bool related = false;
@@ -213,7 +217,7 @@ namespace RoomEscape {
 		// function for shifting keys in the final state of generation
 		public void ShiftKeys () {
 			shiftAllKeysForOnePosition ();
-			shiftSplitKey ();
+			// shiftSplitKey ();
 		}
 
 		private void shiftAllKeysForOnePosition () {
